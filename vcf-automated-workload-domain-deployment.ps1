@@ -1,9 +1,9 @@
 # Author: William Lam
 # Website: www.williamlam.com
 
-$sddcManagerFQDN = "FILL_ME_IN"
-$sddcManagerUsername = "FILL_ME_IN"
-$sddcManagerPassword = "FILL_ME_IN"
+$sddcManagerFQDN = "vcf-m01.tshirts.inc"
+$sddcManagerUsername = "administrator@vsphere.local"
+$sddcManagerPassword = "VMware1!"
 
 # License Later feature only applicable for VCF 5.1.1 and later
 $LicenseLater = $true
@@ -24,31 +24,35 @@ $EnableVSANESA = $false
 
 # vCenter Configuration
 $VCSAHostname = "vcf-w01-vc01"
-$VCSAIP = "172.17.31.120"
+$VCSAIP = "172.29.0.12"
 $VCSARootPassword = "VMware1!"
 
 # NSX Configuration
 $NSXManagerVIPHostname = "vcf-w01-nsx01"
-$NSXManagerVIPIP = "172.17.31.121"
-$NSXManagerNode1Hostname = "vcf-m01-nsx01a"
-$NSXManagerNode1IP = "172.17.31.122"
-$NSXManagerNode2Hostname = "vcf-m01-nsx01b"
-$NSXManagerNode2IP = "172.17.31.123"
-$NSXManagerNode3Hostname = "vcf-m01-nsx01c"
-$NSXManagerNode3IP = "172.17.31.124"
+$NSXManagerVIPIP = "172.29.0.22"
+$NSXManagerNode1Hostname = "vcf-w01-nsx01a"
+$NSXManagerNode1IP = "172.29.0.23"
+$NSXManagerNode2Hostname = "vcf-w01-nsx01b"
+$NSXManagerNode2IP = "172.29.0.24"
+$NSXManagerNode3Hostname = "vcf-w01-nsx01c"
+$NSXManagerNode3IP = "172.29.0.25"
 $NSXAdminPassword = "VMware1!VMware1!"
 $SeparateNSXSwitch = $false
 
+$NestedESXiNSXTepNetworkCidr = "172.29.3.0/24"
+$NestedESXiNSXTepNetworkVlan = "293"
+
+
 $VMNetmask = "255.255.255.0"
-$VMGateway = "172.17.31.1"
+$VMGateway = "172.29.0.1"
 $VMDomain = "tshirts.inc"
 
 #### DO NOT EDIT BEYOND HERE ####
 
 $confirmDeployment = 1
-$commissionHost = 1
+$commissionHost = 0
 $generateWLDDeploymentFile = 1
-$startWLDDeployment = 1
+$startWLDDeployment = 0
 
 $verboseLogFile = "vcf-workload-domain-deployment.log"
 $VCFWorkloadDomainDeploymentJSONFile = "${VCFWorkloadDomainName}.json"
@@ -156,6 +160,13 @@ if($commissionHost -eq 1) {
 
 if($generateWLDDeploymentFile -eq 1) {
     My-Logger "Retreiving unassigned ESXi hosts from SDDC Manager and creating Workload Domain JSON deployment file $VCFWorkloadDomainDeploymentJSONFile"
+
+    $esxiNSXTepNetwork = $NestedESXiNSXTepNetworkCidr.split("/")[0]
+    $esxiNSXTepNetworkOctects = $esxiNSXTepNetwork.split(".")
+    $esxiNSXTepGateway = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".1"
+    $esxiNSXTepStart = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".151"
+    $esxiNSXTepEnd = ($esxiNSXTepNetworkOctects[0..2] -join '.') + ".168"
+
     $hostSpecs = @()
     foreach ($id in (Get-VCFhost -Status UNASSIGNED_USEABLE).id) {
         if($SeparateNSXSwitch) {
@@ -248,19 +259,14 @@ if($generateWLDDeploymentFile -eq 1) {
                         )
                         "nsxClusterSpec" = [ordered] @{
                             "nsxTClusterSpec" = @{
-                                "geneveVlanId" = 2005
+                                "geneveVlanId" = $NestedESXiNSXTepNetworkVlan
                                 "ipAddressPoolSpec" = @{
                                     "name" = "wld-pool"
                                     "subnets" = @(
                                         [ordered] @{
-                                            "cidr" = "10.0.5.0/24"
-                                            "gateway" = "10.0.5.253"
-                                            "ipAddressPoolRanges" = @(
-                                                [ordered] @{
-                                                    "start" = "10.0.5.1"
-                                                    "end" = "10.0.5.128"
-                                                }
-                                            )
+                                            "cidr" = $NestedESXiNSXTepNetworkCidr
+                                            "gateway" = $esxiNSXTepGateway
+                                            "ipAddressPoolRanges" = @(@{"start" = $esxiNSXTepStart;"end" = $esxiNSXTepEnd})
                                         }
                                     )
                                 }
