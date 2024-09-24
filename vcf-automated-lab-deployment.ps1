@@ -103,17 +103,17 @@ $NSXAdminPassword = "VMware1!VMware1!"
 $NSXAuditPassword = "VMware1!VMware1!"
 
 # General Deployment Configuration for Nested ESXi & Cloud Builder VM
-$VMDatacenter = "VxRail-Datacenter"
-$VMCluster = "VxRail-Virtual-SAN-Cluster-78c3ab63-f541-465f-924d-bd5036c5f011"
-$VMNetwork = "pg-airgap-vcf-mgmt"
+$VMDatacenter = "My-Datacenter"
+$VMCluster = "Compute Cluster"
+$VMNetwork = "pg-nested-vcf-mgmt"
 $CBNetwork = "pg-temp-VLAN290" # CB does not have VLAN tag; create a PG that exists on one VLAN and specify here
-$VMDatastore = "VxRail-Virtual-SAN-Datastore-78c3ab63-f541-465f-924d-bd5036c5f011"
+$VMDatastore = "vsanDatastore"
 $VMNetmask = "255.255.255.0"
 $VMGateway = "172.29.0.1"
 $VMDNS = "172.21.0.90"
 $VMNTP = "10.6.1.1"
 $VMPassword = "VMware1!"
-$VMDomain = "set.lab"
+$VMDomain = "tshirts.inc"
 $VMSyslog = "172.29.0.252"
 $VMFolder = "VCF"
 
