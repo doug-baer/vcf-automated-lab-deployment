@@ -1,10 +1,17 @@
 # Author: William Lam
 # Website: www.williamlam.com
 
+# Doug Baer updated with VLAN support-ish:
+#  CB requires non-trunk PG
+#  vESXi hosts include VLAN number in deployment for management
+#  JSON submitted to CB contains VLAN IDs for mgmt, vmotion, vsan and overlay
+
+
 # vCenter Server used to deploy VMware Cloud Foundation Lab
 $VIServer = "FILL-ME-IN"
 $VIUsername = "FILL-ME-IN"
 $VIPassword = "FILL-ME-IN"
+
 
 # Full Path to both the Nested ESXi & Cloud Builder OVA
 $NestedESXiApplianceOVA = "/root/Nested_ESXi8.0u3_Appliance_Template_v1.ova"
@@ -25,14 +32,14 @@ $VCFWorkloadDomainAPIJSONFile = "vcf-commission-host-api.json"
 # Cloud Builder Configurations
 $CloudbuilderVMHostname = "vcf-m01-cb01"
 $CloudbuilderFQDN = "vcf-m01-cb01.tshirts.inc"
-$CloudbuilderIP = "172.17.31.180"
+$CloudbuilderIP = "172.29.0.253"
 $CloudbuilderAdminUsername = "admin"
 $CloudbuilderAdminPassword = "VMw@re123!VMw@re123!"
 $CloudbuilderRootPassword = "VMw@re123!VMw@re123!"
 
 # SDDC Manager Configuration
-$SddcManagerHostname = "vcf-m01-sddcm01"
-$SddcManagerIP = "172.17.31.181"
+$SddcManagerHostname = "vcf-m01"
+$SddcManagerIP = "172.29.0.10"
 $SddcManagerVcfPassword = "VMware1!VMware1!"
 $SddcManagerRootPassword = "VMware1!VMware1!"
 $SddcManagerRestPassword = "VMware1!VMware1!"
@@ -40,18 +47,18 @@ $SddcManagerLocalPassword = "VMware1!VMware1!"
 
 # Nested ESXi VMs for Management Domain
 $NestedESXiHostnameToIPsForManagementDomain = @{
-    "vcf-m01-esx01"   = "172.17.31.185"
-    "vcf-m01-esx02"   = "172.17.31.186"
-    "vcf-m01-esx03"   = "172.17.31.187"
-    "vcf-m01-esx04"   = "172.17.31.188"
+    "vcf-m01-esx01"   = "172.29.0.111"
+    "vcf-m01-esx02"   = "172.29.0.112"
+    "vcf-m01-esx03"   = "172.29.0.113"
+    "vcf-m01-esx04"   = "172.29.0.114"
 }
 
 # Nested ESXi VMs for Workload Domain
 $NestedESXiHostnameToIPsForWorkloadDomain = @{
-    "vcf-m01-esx05"   = "172.17.31.189"
-    "vcf-m01-esx06"   = "172.17.31.190"
-    "vcf-m01-esx07"   = "172.17.31.191"
-    "vcf-m01-esx08"   = "172.17.31.192"
+    "vcf-m01-esx05"   = "172.29.0.115"
+    "vcf-m01-esx06"   = "172.29.0.116"
+    "vcf-m01-esx07"   = "172.29.0.117"
+    "vcf-m01-esx08"   = "172.29.0.118"
 }
 
 # Nested ESXi VM Resources for Management Domain
@@ -70,39 +77,44 @@ $NestedESXiWLDCapacityvDisk = "250" #GB
 $NestedESXiWLDBootDisk = "32" #GB
 
 # ESXi Network Configuration
-$NestedESXiManagementNetworkCidr = "172.17.31.0/24" # should match $VMNetwork configuration
-$NestedESXivMotionNetworkCidr = "172.17.32.0/24"
-$NestedESXivSANNetworkCidr = "172.17.33.0/24"
-$NestedESXiNSXTepNetworkCidr = "172.17.34.0/24"
+$NestedESXiManagementNetworkCidr = "172.29.0.0/24" # should match $VMNetwork configuration
+$NestedESXiManagementNetworkVlan = "290" # should match $VMNetwork configuration
+$NestedESXivMotionNetworkCidr = "172.29.1.0/24"
+$NestedESXivMotionNetworkVlan = "291"
+$NestedESXivSANNetworkCidr = "172.29.2.0/24"
+$NestedESXivSANNetworkVlan = "292"
+$NestedESXiNSXTepNetworkCidr = "172.29.3.0/24"
+$NestedESXiNSXTepNetworkVlan = "293"
 
 # vCenter Configuration
 $VCSAName = "vcf-m01-vc01"
-$VCSAIP = "172.17.31.182"
+$VCSAIP = "172.29.0.11"
 $VCSARootPassword = "VMware1!"
 $VCSASSOPassword = "VMware1!"
 $EnableVCLM = $true
 
 # NSX Configuration
 $NSXManagerVIPHostname = "vcf-m01-nsx01"
-$NSXManagerVIPIP = "172.17.31.183"
+$NSXManagerVIPIP = "172.29.0.20"
 $NSXManagerNode1Hostname = "vcf-m01-nsx01a"
-$NSXManagerNode1IP = "172.17.31.184"
+$NSXManagerNode1IP = "172.29.0.21"
 $NSXRootPassword = "VMware1!VMware1!"
 $NSXAdminPassword = "VMware1!VMware1!"
 $NSXAuditPassword = "VMware1!VMware1!"
 
 # General Deployment Configuration for Nested ESXi & Cloud Builder VM
-$VMDatacenter = "San Jose"
-$VMCluster = "Compute Cluster"
-$VMNetwork = "sjc-comp-mgmt (1731)"
-$VMDatastore = "comp-vsanDatastore"
+$VMDatacenter = "VxRail-Datacenter"
+$VMCluster = "VxRail-Virtual-SAN-Cluster-78c3ab63-f541-465f-924d-bd5036c5f011"
+$VMNetwork = "pg-airgap-vcf-mgmt"
+$CBNetwork = "pg-temp-VLAN290" # CB does not have VLAN tag; create a PG that exists on one VLAN and specify here
+$VMDatastore = "VxRail-Virtual-SAN-Datastore-78c3ab63-f541-465f-924d-bd5036c5f011"
 $VMNetmask = "255.255.255.0"
-$VMGateway = "172.17.31.1"
-$VMDNS = "172.17.31.2"
-$VMNTP = "172.17.31.2"
+$VMGateway = "172.29.0.1"
+$VMDNS = "172.21.0.90"
+$VMNTP = "10.6.1.1"
 $VMPassword = "VMware1!"
-$VMDomain = "tshirts.inc"
-$VMSyslog = "172.17.31.182"
+$VMDomain = "set.lab"
+$VMSyslog = "172.29.0.252"
 $VMFolder = "VCF"
 
 #### DO NOT EDIT BEYOND HERE ####
@@ -118,7 +130,7 @@ $confirmDeployment = 1
 $deployNestedESXiVMsForMgmt = 1
 $deployNestedESXiVMsForWLD = 1
 $deployCloudBuilder = 1
-$moveVMsIntovApp = 1
+$moveVMsIntovApp = 0
 $generateMgmJson = 1
 $startVCFBringup = 1
 $generateWldHostCommissionJson = 1
@@ -291,6 +303,7 @@ if($deployNestedESXiVMsForMgmt -eq 1) {
         $ovfconfig.common.guestinfo.ntp.value = $VMNTP
         $ovfconfig.common.guestinfo.syslog.value = $VMSyslog
         $ovfconfig.common.guestinfo.password.value = $VMPassword
+        $ovfconfig.common.guestinfo.vlan.value = $NestedESXiManagementNetworkVlan
         $ovfconfig.common.guestinfo.ssh.value = $true
 
         My-Logger "Deploying Nested ESXi VM $VMName ..."
@@ -345,6 +358,7 @@ if($deployNestedESXiVMsForWLD -eq 1) {
         $ovfconfig.common.guestinfo.ntp.value = $VMNTP
         $ovfconfig.common.guestinfo.syslog.value = $VMSyslog
         $ovfconfig.common.guestinfo.password.value = $VMPassword
+        $ovfconfig.common.guestinfo.vlan.value = $NestedESXiManagementNetworkVlan
         $ovfconfig.common.guestinfo.ssh.value = $true
 
         My-Logger "Deploying Nested ESXi VM $VMName ..."
@@ -437,7 +451,7 @@ if($deployCloudBuilder -eq 1) {
     $ovfconfig = Get-OvfConfiguration $CloudBuilderOVA
 
     $networkMapLabel = ($ovfconfig.ToHashTable().keys | where {$_ -Match "NetworkMapping"}).replace("NetworkMapping.","").replace("-","_").replace(" ","_")
-    $ovfconfig.NetworkMapping.$networkMapLabel.value = $VMNetwork
+    $ovfconfig.NetworkMapping.$networkMapLabel.value = $CBNetwork
     $ovfconfig.common.guestinfo.hostname.value = $CloudbuilderFQDN
     $ovfconfig.common.guestinfo.ip0.value = $CloudbuilderIP
     $ovfconfig.common.guestinfo.netmask0.value = $VMNetmask
@@ -583,7 +597,7 @@ if($generateMgmJson -eq 1) {
                 "networkType" = "MANAGEMENT"
                 "subnet" = $NestedESXiManagementNetworkCidr
                 "gateway" = $VMGateway
-                "vlanId" = "0"
+                "vlanId" = $NestedESXiManagementNetworkVlan
                 "mtu" = "1500"
                 "portGroupKey" = "vcf-m01-cl01-vds01-pg-mgmt"
                 "standbyUplinks" = @()
@@ -593,7 +607,7 @@ if($generateMgmJson -eq 1) {
                 "networkType" = "VMOTION"
                 "subnet" = $NestedESXivMotionNetworkCidr
                 "gateway" = $esxivMotionGateway
-                "vlanId" = "0"
+                "vlanId" = $NestedESXivMotionNetworkVlan
                 "mtu" = "9000"
                 "portGroupKey" = "vcf-m01-cl01-vds01-pg-vmotion"
                 "association" = "vcf-m01-dc01"
@@ -605,7 +619,7 @@ if($generateMgmJson -eq 1) {
                 "networkType" = "VSAN"
                 "subnet" = $NestedESXivSANNetworkCidr
                 "gateway"= $esxivSANGateway
-                "vlanId" = "0"
+                "vlanId" = $NestedESXivSANNetworkVlan
                 "mtu" = "9000"
                 "portGroupKey" = "vcf-m01-cl01-vds01-pg-vsan"
                 "includeIpAddressRanges" = @(@{"startIpAddress" = $esxivSANStart;"endIpAddress" = $esxivSANEnd})
@@ -632,7 +646,7 @@ if($generateMgmJson -eq 1) {
             "vip" = $NSXManagerVIPIP
             "vipFqdn" = $NSXManagerVIPHostname
             "nsxtLicense" = $NSXLicense
-            "transportVlanId" = "2005"
+            "transportVlanId" = $NestedESXiNSXTepNetworkVlan
             "ipAddressPoolSpec" = [ordered]@{
                 "name" = "vcf-m01-c101-tep01"
                 "description" = "ESXi Host Overlay TEP IP Pool"
